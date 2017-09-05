@@ -1,0 +1,78 @@
+需求文档：
+
+输入：包含图片文件的路径，只读取目录下文件后缀为tif的文件。
+       
+
+输出：按level分割的瓦片，分别存储到不同的文件夹，文件格式为.png（256x256）文件。
+
+      具体：从6—22级，每一级为一个文件夹，文件下存储该级别下所有的瓦片；
+
+      瓦片命名规则：瓦片行号+瓦片列号.png（查找时，提取瓦片名，直接按照行列号匹配到该文件）。
+
+
+实现方法：造一个按谷歌瓦片方式分割的网格系统。
+
+      谷歌瓦片规则：共分为0-22级，地图瓦片坐标系：（列，行），从左上角的（0列,0行），对应经纬度（-180，85.05112877980659）开始。
+			
+		    第0级，一片；第1级4片；第n级，4^n片256的图片。
+
+		    地理坐标系范围：最小地理坐标(-180,-85.05112877980659)，最大地理坐标(180,85.05112877980659)。
+				  
+
+1.在指定的level下，可以得到具体的网格划分。
+
+      google_grid(int level) （level>=6）
+
+
+2.在指定目录下读取文件名列表。
+
+       调用util_filesystem下的list_entry接口读取文件的目录，存到一个向量中；
+
+		 * @brief	获取目录项.
+		 * @author	yimin.liu@unispace-x.com
+		 * @date	2016/9/26
+		 * @param	directory		待读取目录.
+		 * @param	filter			过滤文本.
+		 * @param	only_file		是否仅列出文件
+		 * @return	读取到的目录项.
+        std::vector<us_ustring> list_entry(const us_ustring& directory,const us_ustring & filter = us_ustring("*.*"),bool only_file = true);
+       
+3.将目录中的文件读出。得到一个存储着元数据的向量metalist。
+
+	循环调用data_process下的接口:
+		* @brief	读取影像元数据.
+		* @author	yimin.liu@unispace-x.com
+	 	* @date	2016/3/23
+	 	* @param	path			影像路径(统一后的路径).
+	 	* @param	[in,out]		传入传出影像meta信息.
+	 	* @param	update_uuid	    为true时更新uuid.
+	 	* @return	成功返回true，失败返回false.
+	bool generate_image_meta(const us_ustring& path,us_image_basic_meta* out_meta,bool update_uuid = true);
+
+4.从metalist中的数据，获取图片整体的外包矩形。
+
+   由us_image_basic_meta的数据成员us_geo_rect  m_latlng_rect获取经纬度地理范围。
+   
+
+5.在指定level上生成网格，调用google_grid类中方法，生成i（6<=i<=22）级别的网格。
+	
+	google_grid(i).(创建i级别的网格)。
+	
+	在i级网格下，由第4步中获取的经纬度地理范围外包矩形，找出矩形所在范围的网格的行列号。
+	
+	创建文件夹level_i.
+
+	依次取出每一个被找出的网格的4个角的经纬坐标gridGeoCorner, 像素宽高inOutW=256,inOutH=256.
+
+	调用data_process下的接口get_grid_image_rgba_buffer_aux，取出每个网格范围内的RGBA像素到vector向量outBuf中。
+	
+	调用data_process下的接口bool encode_rgba8888_to_png32，将outBuf转换为png32格式.
+
+	创建.png文件，将像素内容写入。
+
+	直到取完i级别下的被找出的所有网格，i++，i<=22,重复第4步。
+	
+	
+
+
+

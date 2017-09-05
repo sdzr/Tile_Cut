@@ -1,0 +1,10 @@
+工具：geoserver,geowebcache.
+
+方法：把此程序切到的瓦片，放入geowebcache的缓存目录下，然后可通过geowebcache读取瓦片的拼接效果（此处需要配置的geowebcache.xml在已给出，缓存目录为D:/cache/Foundation）。
+
+
+原理：在geoserver中发布图片A。以EPSG:4326的参考seed/truncate。获得图片A的瓦片，将此瓦片拷到geowebcache的缓存目录下。
+    
+      然后用本瓦片分割程序切割图片A的一部分，然后将得到的瓦片也拷贝到geowebcache的缓存目录下,替换部分已存在的瓦片。
+
+      最后，在geowebcache中打开openlayers，即可查看缓存瓦片的拼接效果。若图片A的到还原，则程序得到验证。
